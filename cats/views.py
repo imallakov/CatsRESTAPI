@@ -2,7 +2,7 @@ from rest_framework import generics, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-
+from django_filters import rest_framework as filters
 from .permissions import IsOwnerOrReadOnly
 from .models import Cats, Breeds, Ratings
 from .serializers import CatsSerializer, BreedsSerializer, RatingsSerializer
@@ -14,18 +14,28 @@ class MyPagination(PageNumberPagination):
     max_page_size = 100
 
 
+class CatsFilter(filters.FilterSet):
+    breed = filters.CharFilter(field_name='breed__name', lookup_expr='iexact')
+
+    class Meta:
+        model = Cats
+        fields = ['breed']
+
+
 class BreedListCreateView(generics.ListCreateAPIView):
-    queryset = Breeds.objects.all()
+    queryset = Breeds.objects.all().order_by('name')
     serializer_class = BreedsSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     pagination_class = MyPagination
 
 
 class CatsListCreateView(generics.ListCreateAPIView):
-    queryset = Cats.objects.all()
+    queryset = Cats.objects.all().order_by('id')
     serializer_class = CatsSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     pagination_class = MyPagination
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_class = CatsFilter
 
 
 class CatsUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
